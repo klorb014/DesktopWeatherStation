@@ -3,3 +3,5 @@ This repository will contain all of the resources to create a desktop weather st
 
 
 ![](pics/front.jpg) <!-- .element height="10%" width="50%" -->
+
+<img src="pics/back.jpg" width="200">
