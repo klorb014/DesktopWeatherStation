@@ -1,5 +1,5 @@
 # DesktopWeatherStation
-This repository contains the resources required to build a desktop weather station. This compact device is designed to connect to wifi and then periodically request weather updates from the OpenWeatherMaps API. The weather data is displayed on a low power eink display. When the device send a request to the weather API, a JSON string is return with a variety of values. One of the values is a code which corresponds to a weather icon (clouds, rain, sun, etc.). The program parses this value and then displays the corresponding icon. A microSD card mounted to the microcontroller stores the available icons. The icon format is a monochrome bitmap.
+This repository contains the resources required to build a desktop weather station. This compact device is designed to connect to wifi and then periodically request weather updates from the OpenWeatherMaps API. The weather data is displayed on a low power eink display. When the device send a request to the weather API, a JSON string is returned with a variety of values. One of the values is a code which corresponds to a weather icon (clouds, rain, sun, etc.). The program parses this value and then displays the corresponding icon. A microSD card mounted to the microcontroller stores the available icons. The icon format is a monochrome bitmap.
 
 
 <img src="pics/front.jpg" width="500">
