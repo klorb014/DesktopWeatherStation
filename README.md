@@ -19,6 +19,10 @@ Optional:
 * M2.5 Nut
 * 3D Printed Desktop Stand
 
+The design for the 3d printed stand comes from [here][1]
+
+[1]: https://learn.adafruit.com/eink-featherwing-display-stand/ "Title"
+
 <img src="pics/back.jpg" width="500">
 
 The device can be powered via two methods:
