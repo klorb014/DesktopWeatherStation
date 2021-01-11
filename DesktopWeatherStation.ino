@@ -50,7 +50,7 @@ const char* pass = SECRET_PASSWORD;
 const String token = SECRET_TOKEN;
 
 const String URL = "http://api.openweathermap.org/data/2.5/weather?q=";
-const String locations[4] = {"Ottawa, CA", "Montreal, CA", "Toronto, CA"};
+const String locations[3] = {"Ottawa, CA", "Montreal, CA", "Toronto, CA"};
 DynamicJsonDocument doc(50000);
 
 // Retrieve page response from given URL
