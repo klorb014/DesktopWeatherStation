@@ -51,10 +51,10 @@ const String token = SECRET_TOKEN;
 
 const String URL = "http://api.openweathermap.org/data/2.5/weather?q=";
 const String locations[3] = {"Ottawa, CA", "Montreal, CA", "Toronto, CA"};
-DynamicJsonDocument doc(50000);
+DynamicJsonDocument response(50000);
 
 // Retrieve page response from given URL
-DynamicJsonDocument getWeatherResponse(String location)
+void getWeatherResponse(String location)
 {
   String url = URL+location+token;
   HTTPClient http;
@@ -73,7 +73,9 @@ DynamicJsonDocument getWeatherResponse(String location)
  
       // file found at server
       if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
-      DeserializationError error = deserializeJson(doc, http.getString());
+        String payload = http.getString();
+      Serial.println(payload);
+      DeserializationError error = deserializeJson(response, payload);
       if (error) {
         Serial.print(F("deserializeJson() failed: "));
         Serial.println(error.f_str());
@@ -87,7 +89,6 @@ DynamicJsonDocument getWeatherResponse(String location)
   else {
     Serial.println("[HTTP] Unable to connect");
   }
-  return doc;
 }
 
 
@@ -116,7 +117,7 @@ void loop() {
   wifiConnect();
   // large block of text
   display.clearBuffer();
-  DynamicJsonDocument response = getWeatherResponse(locations[0]);
+  getWeatherResponse(locations[0]);
   displayWeatherData(response, COLOR);
   display.display();
   delay(SLEEP);
@@ -184,12 +185,14 @@ void displayWeatherData(DynamicJsonDocument response, uint16_t color) {
   display.print(getTime(resp_int));
   display.setTextSize(4);
   String resp = response["main"]["temp"];
+  Serial.println(resp);
   resp = String((int)round(resp.toFloat() - 273.15));
   display.setCursor(55, 45);
   display.print(resp+"C\n");
 
-
+Serial.println(resp);
   resp = response["weather"][0]["icon"].as<String>();
+  Serial.println(resp);
   ImageReturnCode stat; // Status from image-reading functions
   stat = reader.drawBMP(getWeatherIcon(resp), display, 0, 35);
   reader.printStatus(stat); // How'd we do?
