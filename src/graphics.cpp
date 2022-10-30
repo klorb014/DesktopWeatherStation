@@ -27,20 +27,19 @@ Graphics::ImageMap Graphics::ImageMap_ = {
     {"03d", "/03d.bmp"},
     {"04d", "/04d.bmp"},
     {"09d", "/09d.bmp"},
-    {"/10d", "/10d.bmp"},
-    {"/11d", "/11d.bmp"},
-    {"/13d", "/13d.bmp"},
-    {"/50d", "/50d.bmp"},
-
+    {"10d", "/10d.bmp"},
+    {"11d", "/11d.bmp"},
+    {"13d", "/13d.bmp"},
+    {"50d", "/50d.bmp"},
     {"01n", "/01d.bmp"},
     {"02n", "/02d.bmp"},
     {"03n", "/03d.bmp"},
     {"04n", "/04d.bmp"},
     {"09n", "/09d.bmp"},
-    {"/10n", "/10d.bmp"},
-    {"/11n", "/11d.bmp"},
-    {"/13n", "/13d.bmp"},
-    {"/50n", "/50d.bmp"},
+    {"10n", "/10d.bmp"},
+    {"11n", "/11d.bmp"},
+    {"13n", "/13d.bmp"},
+    {"50n", "/50d.bmp"},
 };
 
 void Graphics::displayIP(String ip)
@@ -84,7 +83,14 @@ void Graphics::displayWeatherData(String location,
     display->setCursor(55, 45);
     display->print(temperature + "C\n");
     ImageReturnCode stat; // Status from image-reading functions
-    char* imgFile = ImageMap_.find(icon)->second;
+    ImageMap::iterator it = ImageMap_.find(icon);
+    if (it == ImageMap_.end())
+    {
+        LOG_ERROR("Icon does not exist");
+        return;
+    }
+    
+    char* imgFile = it->second;
     stat = reader->drawBMP(imgFile, *display, 0, 35);
     if (stat == IMAGE_SUCCESS){
         LOG_INFO("BMP Drawn Successfully");
