@@ -53,9 +53,6 @@ void setup() {
   delay(10000);
   Serial.begin(115200);
   while(!Serial && !Serial.available()){}
-
-  String ssid = "Lorbnetskie";
-  String pass = "ifUdontnoUwiln0";
   
   config = new Configuration();
   graphics = new Graphics(&display, &reader);
