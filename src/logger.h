@@ -1,11 +1,12 @@
-#include <string>
+#pragma once
 
 #define DEBUG_ACTIVE 1
 
 #define RED_PRE "\e[1;31m"
 #define RED_SUF "\e[1;37m"
-#define GREY_PRE "\e[33m"
-#define GREY_SUF "\e[0m"
+#define YELLOW_PRE "\e[33m"
+#define YELLOW_SUF "\e[0m"
+
 
 #define traceStamp(x)                                  \
         Serial.print("[");                             \
@@ -29,10 +30,10 @@
 
 #if DEBUG_ACTIVE
 #define LOG_DEBUG(x)                                   \
-        Serial.print(GREY_PRE);                        \
+        Serial.print(YELLOW_PRE);                        \
         traceStamp("DEBUG");                           \
         Serial.print(x);                               \
-        Serial.println(GREY_SUF); 
+        Serial.println(YELLOW_SUF); 
 #else
 #define LOG_DEBUG(x) 
 #endif

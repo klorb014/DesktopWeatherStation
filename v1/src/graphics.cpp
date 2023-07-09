@@ -14,14 +14,14 @@ const float MAX_BATTERY_VOLTAGE = 4.2;
 const float PROTECTION_VOLTAGE = 3.2;
 #define COLOR EPD_BLACK
 
-
-Graphics::Graphics(Adafruit_SSD1675* d, Adafruit_ImageReader_EPD* r){
+Graphics::Graphics(Adafruit_SSD1675 *d, Adafruit_ImageReader_EPD *r)
+{
     display = d;
     display->begin();
     reader = r;
 }
 
-Graphics::ImageMap Graphics::ImageMap_ = { 
+Graphics::ImageMap Graphics::ImageMap_ = {
     {"01d", "/01d.bmp"},
     {"02d", "/02d.bmp"},
     {"03d", "/03d.bmp"},
@@ -53,23 +53,27 @@ void Graphics::displayIP(String ip)
     display->display();
 }
 
-void Graphics::displayWelcome()
+void Graphics::displayAccessPoint(String ssid, String password, String ip)
 {
     display->clearBuffer();
     display->setCursor(0, 0);
     display->setTextColor(COLOR);
     display->setTextSize(2);
     display->setTextWrap(true);
-    display->print("Desktop Weather \nStation\n\nSetup Wifi At:\n192.168.4.1/");
+    String message = "Weather Station\n\n";
+    display->print(message);
+    display->setTextSize(1);
+    message = "Configure System At:\n\nssid: " + ssid + "\n\npassword: " + password + "\n\nip: " + ip + "/";
+    display->print(message);
     display->display();
 }
 
 void Graphics::displayWeatherData(String location,
-                                    String time,
-                                    String temperature,
-                                    String icon, 
-                                    String feelsLike, 
-                                    String weather)
+                                  String time,
+                                  String temperature,
+                                  String icon,
+                                  String feelsLike,
+                                  String weather)
 {
     LOG_DEBUG("[" + location + "]" + "[" + time + "]" + "[" + temperature + "]" + "[" + icon + "]" + "[" + feelsLike + "]" + "[" + weather + "]");
     display->clearBuffer();
@@ -89,20 +93,23 @@ void Graphics::displayWeatherData(String location,
         LOG_ERROR("Icon does not exist");
         return;
     }
-    
-    char* imgFile = it->second;
+
+    char *imgFile = it->second;
     stat = reader->drawBMP(imgFile, *display, 0, 35);
-    if (stat == IMAGE_SUCCESS){
+    if (stat == IMAGE_SUCCESS)
+    {
         LOG_INFO("BMP Drawn Successfully");
     }
-    else if (stat == IMAGE_ERR_FILE_NOT_FOUND){
+    else if (stat == IMAGE_ERR_FILE_NOT_FOUND)
+    {
         LOG_ERROR("File not found.");
     }
     else if (stat == IMAGE_ERR_FORMAT)
     {
         LOG_ERROR("Not a supported BMP variant.");
-    } 
-    else if (stat == IMAGE_ERR_MALLOC){
+    }
+    else if (stat == IMAGE_ERR_MALLOC)
+    {
         LOG_ERROR("Malloc failed (insufficient RAM).");
     }
     display->setCursor(0, 85);
@@ -111,11 +118,12 @@ void Graphics::displayWeatherData(String location,
     // display->setCursor(0, 85);
     display->setTextSize(3);
     display->print(weather + "\n");
-    //displayBatteryLife();
+    // displayBatteryLife();
     display->display();
 }
 
-void Graphics::displayBatteryLife(){
+void Graphics::displayBatteryLife()
+{
     display->setCursor(220, 0);
     display->setTextSize(1);
 

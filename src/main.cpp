@@ -1,15 +1,14 @@
-#include <network_secrets.h>
 #include <Arduino.h>
-#include <network.h>
+#include <network_secrets.h>
 #include <logger.h>
-#include <control.h>
-#include <graphics.h>
 #include <SdFat.h>
 #include <Adafruit_EPD.h>
 #include <Adafruit_GFX.h>
-#include <WebServer.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 #include <Adafruit_ImageReader_EPD.h>
-#include <enum.h>
+#include <string>
+#include <sstream>
 
 #define SRAM_CS 32
 #define EPD_CS 15
@@ -22,94 +21,168 @@
 #define EPD_RESET -1 // can set to -1 and share with microcontroller Reset!
 #define EPD_BUSY -1  // can set to -1 to not use a pin (will wait a fixed delay)
 
-#define REFRESH_TIMER 300 //5 minutes in seconds
-
-volatile int interruptCounter;
-int totalInterruptCounter;
-
-hw_timer_t *timer = NULL;
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
-void IRAM_ATTR onTimer()
-{
-  portENTER_CRITICAL_ISR(&timerMux);
-  interruptCounter++;
-  portEXIT_CRITICAL_ISR(&timerMux);
-}
-
 #define SD_CS 14
-//SdFat SD;
-Adafruit_ImageReader_EPD reader(Configuration::SD); // Image-reader object, pass in SD filesys 
+SdFat SD;
+Adafruit_ImageReader_EPD reader(SD); // Image-reader object, pass in SD filesys
 Adafruit_SSD1675 display(250, 122, EPD_DC, EPD_RESET, EPD_CS, SRAM_CS, EPD_BUSY);
 
-HttpServer *httpServer;
-Configuration *config;
-Controller *controller;
-Graphics* graphics;
-String location = "Ottawa, Canada"; 
+HTTPClient http;
 
+String SERVER_URL = "http://192.168.0.29:5000/api/key";
+// String SERVER_URL = "http://192.168.0.29:5000/";
+String TMP_FILE = "tmp.bmp";
 
-void setup() {
-  delay(10000);
-  Serial.begin(115200);
-  while(!Serial && !Serial.available()){}
-
-  String ssid = "Lorbnetskie";
-  String pass = "ifUdontnoUwiln0";
-  
-  config = new Configuration();
-  graphics = new Graphics(&display, &reader);
-  httpServer = new HttpServer(config);
-  controller = new Controller(httpServer, config, graphics);
-
-
-  timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, REFRESH_TIMER*1000000, true);
-  timerAlarmEnable(timer);
-  
-
-  Mode newState;
-  if (!Configuration::initializeSD()){
-      newState = Mode::ERROR;
-      controller->stateChange(newState);
-  }
-  else if (Configuration::available(&newState) && Configuration::load(&newState, config))
-  {
-      config->connect() ? controller->stateChange(Mode::HTTP_SERVER) : controller->stateChange(Mode::ACCESS_POINT);
-  }
-  else
-  {
-      controller->stateChange(newState);
-  }
-  // put your main code here, to run repeatedly:
-  if (controller->getState() == Mode::HTTP_SERVER){
-    controller->refreshDisplay();
-  }
-  LOG_INFO("Setup Complete");
-}
-
-bool handleTimer()
+bool wifi_connect()
 {
-    if (interruptCounter > 0)
+    String ssid = SECRET_SSID;
+    String pass = SECRET_PASSWORD;
+    if (WiFi.status() != WL_CONNECTED)
     {
-      portENTER_CRITICAL(&timerMux);
-      interruptCounter--;
-      portEXIT_CRITICAL(&timerMux);
-      LOG_DEBUG("Timer Finished");
-      return true;
+        Serial.print("Connecting to ");
+        Serial.println(ssid);
+
+        WiFi.begin(ssid.c_str(), pass.c_str());
+        int timeout = 30;
+
+        while (WiFi.status() != WL_CONNECTED)
+        {
+            if (timeout > 0)
+            {
+                digitalWrite(13, HIGH);
+                delay(1000);
+                digitalWrite(13, LOW);
+                Serial.print(".");
+                delay(2000);
+                timeout = timeout - 3;
+            }
+            else
+            {
+                WiFi.begin(ssid.c_str(), pass.c_str());
+                timeout = 30;
+                Serial.print("\n");
+            }
+        }
+
+        Serial.println("");
+        Serial.println("WiFi connected");
+        Serial.println("IP address: ");
+        Serial.println(WiFi.localIP());
     }
-    return false;
+    return true;
 }
 
-void loop() {
-  if (controller->getState() == Mode::HTTP_SERVER)
-  {
-    httpServer->handleClient();
-    if (handleTimer())
+void setup()
+{
+    delay(10000);
+    Serial.begin(115200);
+    while (!Serial && !Serial.available())
     {
-        controller->refreshDisplay();
     }
-    delay(2);
-  }
+    Serial.print(F("Initializing filesystem..."));
+    pinMode(13, OUTPUT);
+
+    // SD card is pretty straightforward, a single call...
+    if (!SD.begin(SD_CS, SD_SCK_MHZ(10)))
+    { // Breakouts require 10 MHz limit due to longer wires
+        Serial.println(F("SD begin() failed"));
+        for (;;)
+            ; // Fatal error, do not continue
+    }
+
+    display.begin();
+
+    Serial.println(F("OK!"));
+
+    wifi_connect();
+}
+
+
+
+bool fetch_display_data(std::string &error_msg)
+{
+    std::stringstream ss;
+    bool rc = false;
+    Serial.println(SERVER_URL);
+    SD.remove(TMP_FILE.c_str());
+    File f = SD.open(TMP_FILE, FILE_WRITE);
+    if (f)
+    {
+        http.begin(SERVER_URL);
+        int httpCode = http.GET();
+        if (httpCode > 0)
+        {
+            if (httpCode == HTTP_CODE_OK)
+            {
+                http.writeToStream(&f);
+                rc = true;
+            }
+        }
+        else
+        {
+            ss << "[HTTP] GET error: " << http.errorToString(httpCode).c_str();
+            error_msg = ss.str();
+            Serial.println(error_msg.c_str());
+        }
+        f.close();
+    }
+    else
+    {
+        Serial.printf("Failed to open file\n");
+    }
+    http.end();
+    return rc;
+}
+
+bool refresh_display()
+{
+    bool rc = false;
+    display.clearBuffer();
+
+    ImageReturnCode stat = reader.drawBMP(strdup(TMP_FILE.c_str()), display, 0, 0);
+    if (stat == IMAGE_SUCCESS)
+    {
+        rc = true;
+        Serial.println("BMP Drawn Successfully");
+    }
+    else if (stat == IMAGE_ERR_FILE_NOT_FOUND)
+    {
+        Serial.println("File not found.");
+    }
+    else if (stat == IMAGE_ERR_FORMAT)
+    {
+        Serial.println("Not a supported BMP variant.");
+    }
+    else if (stat == IMAGE_ERR_MALLOC)
+    {
+        Serial.println("Malloc failed (insufficient RAM).");
+    }
+
+    display.display();
+    return rc;
+}
+
+void display_msg(std::string msg)
+{
+    display.clearBuffer();
+    display.setCursor(0, 0);
+    display.setTextColor(COLOR);
+    display.setTextSize(2);
+    display.setTextWrap(true);
+    display.print(msg.c_str());
+    display.display();
+}
+
+void loop()
+{
+    std::string error_msg;
+    if (fetch_display_data(error_msg))
+    {
+        refresh_display();
+    }
+    else
+    {
+        display_msg(error_msg);
+    }
+
+    sleep(10 * 60);
 }

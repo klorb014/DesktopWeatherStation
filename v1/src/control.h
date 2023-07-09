@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include <SdFat.h>
 #include <network.h>
-#include <logger.h>
 #include <graphics.h>
 #include <map>
 #include <configuration.h>
@@ -22,6 +21,7 @@ public:
     void stateChange(Mode newState);
     void refreshDisplay();
     Mode getState();
+    IPAddress getIP();
     Fetcher fetcher;
     typedef std::map<Mode, String> StateMap;
     static StateMap StateMap_;

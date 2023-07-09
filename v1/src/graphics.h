@@ -16,7 +16,7 @@ class Graphics{
         Graphics(Adafruit_SSD1675*, Adafruit_ImageReader_EPD*);
         void displayWeatherData(String, String, String, String, String, String);
         void displayIP(String);
-        void displayWelcome();
+        void displayAccessPoint(String, String, String);
         void displayBatteryLife();
         typedef std::map<String, char*> ImageMap;
         static ImageMap ImageMap_;

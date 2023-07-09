@@ -9,12 +9,16 @@
 class HttpServer{
   private:
     static WebServer server;
+    const static String AP_ssid;
+    static String AP_pass;
     Configuration* config;
   public:
     HttpServer(Configuration* Configuration);    
     static void handleWifiPage();
     bool serverStart();
+    static bool startAccessPoint(String*, bool = true);
     void handleClient();
+    static void handleWifiConnect();
     static void handleLocationSet();
 };
 
